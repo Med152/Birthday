@@ -111,6 +111,7 @@ export default function App() {
   const [showMinigame, setShowMinigame] = useState(false);
   const [showFinisher, setShowFinisher] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
+  const [canSkipVideo, setCanSkipVideo] = useState(false);
   const heroRef = useRef(null);
   const canvasRef = useRef(null);
   const audioRef = useRef(null);
@@ -265,7 +266,8 @@ export default function App() {
 
     setTimeout(() => setShowFinisher(false), 1400);
     setTimeout(() => triggerConfetti(), 700);
-    setTimeout(() => setShowVideo(true), 1500);
+    setTimeout(() => { setShowVideo(true); setCanSkipVideo(false); }, 1500);
+    setTimeout(() => setCanSkipVideo(true), 1500 + 6000);
   };
 
   const blowCandle = (i) => {
@@ -645,50 +647,71 @@ export default function App() {
       {showVideo && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 9999,
-          background: "rgba(3,0,10,0.95)",
+          background: "#000",
           display: "flex", alignItems: "center", justifyContent: "center",
-          backdropFilter: "blur(6px)",
+          animation: "easterPop 0.4s ease forwards",
         }}>
+          {/* Cinematic bars */}
           <div style={{
-            width: "min(720px, 92vw)",
-            position: "relative",
-            animation: "easterPop 0.5s ease forwards",
+            position: "absolute", top: 0, left: 0, right: 0, height: "8vh",
+            background: "#000", zIndex: 3,
+          }} />
+          <div style={{
+            position: "absolute", bottom: 0, left: 0, right: 0, height: "8vh",
+            background: "#000", zIndex: 3,
+          }} />
+
+          {/* Fullscreen video, no native controls reachable */}
+          <div style={{
+            position: "absolute", inset: 0,
           }}>
-            <button onClick={() => setShowVideo(false)} style={{
-              position: "absolute", top: "-40px", right: "0px",
-              background: "none", border: "1px solid rgba(248,113,113,0.4)",
-              color: "#F87171", fontSize: "14px", letterSpacing: "0.1em",
-              padding: "6px 14px", borderRadius: "4px", cursor: "pointer",
-            }}>
-              ✕ CLOSE
-            </button>
-            <div style={{
-              border: "1px solid rgba(239,68,68,0.5)",
-              borderRadius: "14px",
-              overflow: "hidden",
-              boxShadow: "0 0 60px rgba(239,68,68,0.25)",
-              background: "#000",
-              position: "relative",
-              paddingTop: "56.25%",
-            }}>
-              <iframe
-                src="https://streamable.com/e/yzvnbh"
-                frameBorder="0"
-                allow="autoplay; fullscreen"
-                allowFullScreen
-                style={{
-                  position: "absolute", top: 0, left: 0,
-                  width: "100%", height: "100%",
-                }}
-              />
-            </div>
-            <div style={{
-              textAlign: "center", marginTop: "16px",
-              color: "#A78BFA", fontSize: "13px", letterSpacing: "0.15em",
-            }}>
-              ✦ The blade has spoken, Trailblazer ✦
-            </div>
+            <iframe
+              src="https://streamable.com/e/yzvnbh?autoplay=1&muted=0&nocontrols=1"
+              frameBorder="0"
+              allow="autoplay; fullscreen"
+              style={{
+                position: "absolute", top: 0, left: 0,
+                width: "100%", height: "100%",
+                pointerEvents: "none",
+              }}
+            />
           </div>
+
+          {/* Invisible click-blocker: prevents pausing/seeking/clicking the player */}
+          <div style={{
+            position: "fixed", inset: 0, zIndex: 2,
+            background: "transparent",
+            cursor: "default",
+          }} />
+
+          {/* Cutscene label */}
+          <div style={{
+            position: "absolute", top: "8vh", left: "24px", zIndex: 4,
+            color: "rgba(255,255,255,0.6)", fontSize: "11px",
+            letterSpacing: "0.3em", textTransform: "uppercase",
+            animation: "mgFloatTitle 2.4s ease-in-out infinite",
+          }}>
+            ⚡ Cutscene — Acheron
+          </div>
+
+          {/* Skip button, only available after a few seconds */}
+          {canSkipVideo && (
+            <button
+              onClick={() => setShowVideo(false)}
+              style={{
+                position: "absolute", bottom: "8vh", right: "24px", zIndex: 4,
+                background: "rgba(0,0,0,0.5)",
+                border: "1px solid rgba(255,255,255,0.3)",
+                color: "#fff", fontSize: "12px", letterSpacing: "0.15em",
+                padding: "10px 20px", borderRadius: "4px", cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(239,68,68,0.4)"}
+              onMouseLeave={(e) => e.currentTarget.style.background = "rgba(0,0,0,0.5)"}
+            >
+              SKIP ▶▶
+            </button>
+          )}
         </div>
       )}
 
