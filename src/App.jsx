@@ -17,6 +17,7 @@ const CHARACTERS = [
     border: "rgba(168,85,247,0.4)",
     particles: ["❋", "✿", "❀", "✾"],
     icon: "🌸",
+    image: "https://upload-os-bbs.hoyolab.com/upload/2024/05/16/153638533/2be3d940c7f334f57e3998ecaaa4f7ec_4137075711809743427.png",
   },
   {
     id: "acheron",
@@ -34,6 +35,7 @@ const CHARACTERS = [
     border: "rgba(239,68,68,0.4)",
     particles: ["⚡", "⚔", "✦", "⋆"],
     icon: "⚔️",
+    image: "https://i.pinimg.com/474x/35/02/33/35023309e81a8b7dfd8c14b2055552c1.jpg",
   },
   {
     id: "kafka",
@@ -51,6 +53,7 @@ const CHARACTERS = [
     border: "rgba(249,115,22,0.4)",
     particles: ["◈", "⬡", "⬢", "◆"],
     icon: "🎴",
+    image: "https://i.pinimg.com/736x/9d/ed/51/9ded51da8b4c8adf36b885f6d2c0c736.jpg",
   },
   {
     id: "blackswan",
@@ -68,6 +71,7 @@ const CHARACTERS = [
     border: "rgba(99,102,241,0.4)",
     particles: ["◉", "○", "◎", "●"],
     icon: "🦢",
+    image: "https://i.pinimg.com/736x/65/2d/ec/652dec6ef5b1ccd2f2b155cbb9428924.jpg",
   },
 ];
 
@@ -104,6 +108,9 @@ export default function App() {
   const [slashActive, setSlashActive] = useState(false);
   const [slashParticles, setSlashParticles] = useState([]);
   const [cakeSlashed, setCakeSlashed] = useState(false);
+  const [showMinigame, setShowMinigame] = useState(false);
+  const [showFinisher, setShowFinisher] = useState(false);
+  const [showVideo, setShowVideo] = useState(false);
   const heroRef = useRef(null);
   const canvasRef = useRef(null);
   const audioRef = useRef(null);
@@ -221,40 +228,44 @@ export default function App() {
 
   const triggerSlash = () => {
     if (cakeSlashed) return;
-    
+    setShowMinigame(true);
+  };
+
+  const completeMinigame = () => {
+    setShowMinigame(false);
     setCakeSlashed(true);
     unlock("cake_slash");
-    setSlashActive(true);
-    
-    // Create slash particles
-    const particles = Array.from({ length: 20 }, (_, i) => ({
+    setShowFinisher(true);
+
+    // Create slash particles (big AOE burst)
+    const particles = Array.from({ length: 40 }, (_, i) => ({
       id: i,
       x: 25 + Math.random() * 50,
-      y: 40 + Math.random() * 30,
-      vx: (Math.random() - 0.5) * 8,
-      vy: Math.random() * -6 - 2,
-      color: ["#F87171", "#EF4444", "#FCA5A5", "#FCD34D"][Math.floor(Math.random() * 4)],
-      size: Math.random() * 4 + 2,
+      y: 30 + Math.random() * 40,
+      vx: (Math.random() - 0.5) * 10,
+      vy: Math.random() * -8 - 2,
+      color: ["#F87171", "#EF4444", "#FCA5A5", "#FCD34D", "#fff"][Math.floor(Math.random() * 5)],
+      size: Math.random() * 5 + 2,
       life: 1,
     }));
     setSlashParticles(particles);
-    
-    // Animate particles
+
     const animateParticles = setInterval(() => {
       setSlashParticles((prev) => {
         const updated = prev.map((p) => ({
           ...p,
           y: p.y + p.vy,
           vy: p.vy + 0.3,
-          life: p.life - 0.05,
+          life: p.life - 0.04,
         })).filter((p) => p.life > 0);
         if (updated.length === 0) clearInterval(animateParticles);
         return updated;
       });
     }, 30);
-    
-    setTimeout(() => setSlashActive(false), 600);
-    triggerConfetti();
+
+    setTimeout(() => setShowFinisher(false), 1400);
+    setTimeout(() => triggerConfetti(), 700);
+    setTimeout(() => setShowVideo(true), 1500);
   };
 
   const blowCandle = (i) => {
@@ -469,6 +480,30 @@ export default function App() {
             opacity:0;
           }
         }
+        @keyframes aoeFlash {
+          0%{opacity:0} 15%{opacity:1} 100%{opacity:0}
+        }
+        @keyframes aoeSlash1 {
+          0%{clip-path:inset(0 100% 0 0);opacity:1}
+          60%{clip-path:inset(0 0 0 0);opacity:1}
+          100%{clip-path:inset(0 0 0 0);opacity:0}
+        }
+        @keyframes aoeSlash2 {
+          0%{clip-path:inset(0 0 0 100%);opacity:1}
+          60%{clip-path:inset(0 0 0 0);opacity:1}
+          100%{clip-path:inset(0 0 0 0);opacity:0}
+        }
+        @keyframes aoeSlash3 {
+          0%{clip-path:inset(0 100% 0 0);opacity:1;transform:rotate(-5deg) scale(0.8)}
+          50%{clip-path:inset(0 0 0 0);opacity:1;transform:rotate(-5deg) scale(1.1)}
+          100%{clip-path:inset(0 0 0 0);opacity:0;transform:rotate(-5deg) scale(1.3)}
+        }
+        @keyframes aoeText {
+          0%{opacity:0;transform:scale(2)}
+          25%{opacity:1;transform:scale(1)}
+          80%{opacity:1;transform:scale(1)}
+          100%{opacity:0;transform:scale(1.1)}
+        }
         .char-card:hover .char-glow { opacity: 1 !important; }
         .char-card:hover .char-img { transform: scale(1.05) !important; }
         .char-card:hover { transform: translateY(-6px) !important; }
@@ -539,7 +574,57 @@ export default function App() {
         </div>
       )}
 
-      {/* Slash particles */}
+      {/* Slash Minigame */}
+      {showMinigame && (
+        <SlashMinigame onComplete={completeMinigame} onClose={() => setShowMinigame(false)} />
+      )}
+
+      {/* Big AOE finisher overlay */}
+      {showFinisher && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 9996, pointerEvents: "none",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          overflow: "hidden",
+        }}>
+          <div style={{
+            position: "absolute", inset: 0,
+            background: "radial-gradient(circle, rgba(239,68,68,0.25) 0%, transparent 60%)",
+            animation: "aoeFlash 1.4s ease forwards",
+          }} />
+          <div style={{
+            position: "absolute", width: "140%", height: "10px",
+            background: "linear-gradient(90deg, transparent, #fff, #F87171, #fff, transparent)",
+            boxShadow: "0 0 40px #F87171, 0 0 80px #EF4444",
+            transform: "rotate(-30deg)",
+            animation: "aoeSlash1 0.5s ease-out forwards",
+          }} />
+          <div style={{
+            position: "absolute", width: "140%", height: "10px",
+            background: "linear-gradient(90deg, transparent, #fff, #F87171, #fff, transparent)",
+            boxShadow: "0 0 40px #F87171, 0 0 80px #EF4444",
+            transform: "rotate(15deg)",
+            animation: "aoeSlash2 0.5s 0.1s ease-out forwards",
+          }} />
+          <div style={{
+            position: "absolute", width: "140%", height: "14px",
+            background: "linear-gradient(90deg, transparent, #FCD34D, #fff, #FCD34D, transparent)",
+            boxShadow: "0 0 60px #FCD34D, 0 0 100px #F87171",
+            transform: "rotate(-5deg)",
+            animation: "aoeSlash3 0.6s 0.2s ease-out forwards",
+          }} />
+          <div style={{
+            fontSize: "clamp(28px,6vw,64px)", fontWeight: "bold", color: "#F87171",
+            textShadow: "0 0 30px #EF4444, 0 0 60px #F87171",
+            letterSpacing: "0.15em",
+            animation: "aoeText 1.4s ease forwards",
+            opacity: 0,
+          }}>
+            SLASHED!
+          </div>
+        </div>
+      )}
+
+
       {slashParticles.map((p) => (
         <div key={p.id} style={{
           position: "fixed",
@@ -556,47 +641,58 @@ export default function App() {
         }} />
       ))}
 
-      {/* Slash overlay */}
-      {slashActive && (
+      {/* Post-slash video reveal */}
+      {showVideo && (
         <div style={{
-          position: "fixed",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: "500px",
-          height: "300px",
-          pointerEvents: "none",
-          zIndex: 9997,
+          position: "fixed", inset: 0, zIndex: 9999,
+          background: "rgba(3,0,10,0.95)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          backdropFilter: "blur(6px)",
         }}>
-          {/* First slash */}
           <div style={{
-            position: "absolute",
-            width: "100%",
-            height: "4px",
-            background: "linear-gradient(90deg, transparent, #F87171, #EF4444, #F87171, transparent)",
-            top: "40%",
-            left: 0,
-            borderRadius: "2px",
-            boxShadow: "0 0 20px #F87171, 0 0 40px #EF4444",
-            animation: "slashAnimation 0.4s ease-out forwards",
-          }} />
-          {/* Second slash */}
-          <div style={{
-            position: "absolute",
-            width: "100%",
-            height: "4px",
-            background: "linear-gradient(90deg, transparent, #EF4444, #F87171, #EF4444, transparent)",
-            top: "55%",
-            left: 0,
-            borderRadius: "2px",
-            boxShadow: "0 0 20px #EF4444, 0 0 40px #F87171",
-            animation: "slash2Animation 0.4s ease-out forwards",
-            animationDelay: "0.05s",
-          }} />
+            width: "min(720px, 92vw)",
+            position: "relative",
+            animation: "easterPop 0.5s ease forwards",
+          }}>
+            <button onClick={() => setShowVideo(false)} style={{
+              position: "absolute", top: "-40px", right: "0px",
+              background: "none", border: "1px solid rgba(248,113,113,0.4)",
+              color: "#F87171", fontSize: "14px", letterSpacing: "0.1em",
+              padding: "6px 14px", borderRadius: "4px", cursor: "pointer",
+            }}>
+              ✕ CLOSE
+            </button>
+            <div style={{
+              border: "1px solid rgba(239,68,68,0.5)",
+              borderRadius: "14px",
+              overflow: "hidden",
+              boxShadow: "0 0 60px rgba(239,68,68,0.25)",
+              background: "#000",
+              position: "relative",
+              paddingTop: "56.25%",
+            }}>
+              <iframe
+                src="https://streamable.com/e/yzvnbh"
+                frameBorder="0"
+                allow="autoplay; fullscreen"
+                allowFullScreen
+                style={{
+                  position: "absolute", top: 0, left: 0,
+                  width: "100%", height: "100%",
+                }}
+              />
+            </div>
+            <div style={{
+              textAlign: "center", marginTop: "16px",
+              color: "#A78BFA", fontSize: "13px", letterSpacing: "0.15em",
+            }}>
+              ✦ The blade has spoken, Trailblazer ✦
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Confetti */}
+
       {confettiPieces.map((p) => (
         <div key={p.id} style={{
           position: "fixed", top: 0, left: p.x + "%", zIndex: 9998,
@@ -796,8 +892,13 @@ export default function App() {
               animation: "floatSlow 4s ease-in-out infinite",
               animationDelay: CHARACTERS.indexOf(c) * 0.5 + "s",
               cursor: "default",
+              overflow: "hidden",
             }}>
-              {c.icon}
+              {c.image ? (
+                <img src={c.image} alt={c.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center" }} />
+              ) : (
+                c.icon
+              )}
             </div>
           ))}
         </div>
@@ -1170,25 +1271,43 @@ function CharacterCard({ char, index, visible, onHover, hoveredChar }) {
 
       {/* Visual */}
       <div className="char-img" style={{
-        width: "100%", height: "140px",
+        width: "100%", height: "260px",
         background: `radial-gradient(ellipse at 50% 80%, ${char.glow}30 0%, transparent 70%)`,
         display: "flex", alignItems: "center", justifyContent: "center",
         marginBottom: "20px", position: "relative",
         transition: "transform 0.4s",
-        fontSize: "80px",
         borderRadius: "8px",
         border: `1px solid ${char.border}`,
         overflow: "hidden",
       }}>
-        <div style={{ filter: "drop-shadow(0 0 20px " + char.glow + ")" }}>
-          {char.icon}
-        </div>
+        {char.image ? (
+          <img
+            src={char.image}
+            alt={char.name}
+            style={{
+              width: "100%", height: "100%",
+              objectFit: "cover",
+              objectPosition: "top center",
+              filter: `drop-shadow(0 0 20px ${char.glow}55)`,
+            }}
+          />
+        ) : (
+          <div style={{ fontSize: "80px", filter: "drop-shadow(0 0 20px " + char.glow + ")" }}>
+            {char.icon}
+          </div>
+        )}
+        {/* bottom fade so the card border reads as one piece */}
+        <div style={{
+          position: "absolute", inset: 0,
+          background: `linear-gradient(180deg, transparent 60%, ${char.cardBg} 100%)`,
+          pointerEvents: "none",
+        }} />
         {/* Energy particles */}
         {[0,1,2,3,4].map(j => (
           <div key={j} style={{
             position: "absolute",
             left: (15 + j * 17) + "%",
-            top: (20 + Math.sin(j) * 40) + "%",
+            top: (10 + Math.sin(j) * 30) + "%",
             width: "4px", height: "4px",
             borderRadius: "50%", background: char.color,
             opacity: 0.6,
@@ -1266,8 +1385,13 @@ function WishCard({ char, index, visible }) {
         fontSize: "26px",
         boxShadow: revealed ? `0 0 20px ${char.glow}44` : "none",
         transition: "all 0.4s",
+        overflow: "hidden",
       }}>
-        {char.icon}
+        {char.image ? (
+          <img src={char.image} alt={char.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center" }} />
+        ) : (
+          char.icon
+        )}
       </div>
       <div style={{ flex: 1 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
@@ -1421,6 +1545,333 @@ function BirthdayCake({ candleCount, blownCandles, onBlowCandle, cakeBlown, cake
           background: "linear-gradient(to right, #0F0A23, #1E1B4B, #0F0A23)",
           borderRadius: "0 0 8px 8px",
         }} />
+      </div>
+    </div>
+  );
+}
+
+function SlashMinigame({ onComplete, onClose }) {
+  // 3 timed strikes using a shrinking 3D reticle (closing ring), then auto-finish into AOE
+  const [stage, setStage] = useState(1); // 1,2,3
+  const [ringScale, setRingScale] = useState(2.6); // shrinks toward 1
+  const [targetScale, setTargetScale] = useState(1);
+  const [tolerance, setTolerance] = useState(0.22);
+  const [feedback, setFeedback] = useState(null); // 'PERFECT' | 'HIT' | 'MISS'
+  const [misses, setMisses] = useState(0);
+  const [locked, setLocked] = useState(false);
+  const [swingKey, setSwingKey] = useState(0); // remounts blade swing animation
+  const [shake, setShake] = useState(false);
+  const [impactFlash, setImpactFlash] = useState(false);
+  const rafRef = useRef(null);
+  const speedRef = useRef(0.018);
+
+  useEffect(() => {
+    // harder & faster each stage
+    setTargetScale(1);
+    setTolerance(stage === 1 ? 0.26 : stage === 2 ? 0.2 : 0.15);
+    speedRef.current = 0.016 + stage * 0.006;
+    setRingScale(2.6);
+    setLocked(false);
+  }, [stage]);
+
+  useEffect(() => {
+    let s = 2.6;
+    const tick = () => {
+      s -= speedRef.current;
+      if (s <= 0.15) s = 2.6; // loop back out if missed window
+      setRingScale(s);
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [stage]);
+
+  const strike = () => {
+    if (locked) return;
+    setLocked(true);
+    cancelAnimationFrame(rafRef.current);
+
+    const dist = Math.abs(ringScale - targetScale);
+    let result;
+    if (dist <= tolerance * 0.4) result = "PERFECT";
+    else if (dist <= tolerance) result = "HIT";
+    else result = "MISS";
+
+    setFeedback(result);
+    if (result === "MISS") setMisses((m) => m + 1);
+
+    // Trigger blade swing + camera shake + impact flash
+    setSwingKey((k) => k + 1);
+    if (result !== "MISS") {
+      setShake(true);
+      setImpactFlash(true);
+      setTimeout(() => setShake(false), 280);
+      setTimeout(() => setImpactFlash(false), 180);
+    }
+
+    setTimeout(() => {
+      setFeedback(null);
+      if (stage < 3) {
+        setStage((s) => s + 1);
+      } else {
+        onComplete();
+      }
+    }, 650);
+  };
+
+  const ringColor = (() => {
+    const dist = Math.abs(ringScale - targetScale);
+    if (dist <= tolerance * 0.4) return "#FCD34D";
+    if (dist <= tolerance) return "#F87171";
+    return "#818CF8";
+  })();
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 9999,
+      background: "#03000a",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      overflow: "hidden",
+    }}>
+      <style>{`
+        @keyframes mgFeedbackPop { 0%{transform:scale(0.5);opacity:0} 30%{transform:scale(1.25);opacity:1} 100%{transform:scale(1);opacity:0} }
+        @keyframes mgVoidDrift {
+          0%{transform:translateZ(0) rotateX(78deg) translateY(0)}
+          100%{transform:translateZ(0) rotateX(78deg) translateY(60px)}
+        }
+        @keyframes mgRingPulse { 0%,100%{opacity:0.5} 50%{opacity:0.9} }
+        @keyframes mgBladeSwing {
+          0%{ transform: translate3d(-60%, 10%, -250px) rotate3d(0.2,1,0.1,-70deg) scale(0.6); opacity:0; }
+          12%{ opacity:1; }
+          45%{ transform: translate3d(0%, -2%, 180px) rotate3d(0.2,1,0.1,10deg) scale(1.5); opacity:1; }
+          70%{ transform: translate3d(40%, -8%, 280px) rotate3d(0.2,1,0.1,55deg) scale(1.7); opacity:1; }
+          100%{ transform: translate3d(90%, -10%, 320px) rotate3d(0.2,1,0.1,80deg) scale(1.8); opacity:0; }
+        }
+        @keyframes mgBladeTrail {
+          0%{opacity:0} 20%{opacity:0.5} 100%{opacity:0}
+        }
+        @keyframes mgImpactFlash {
+          0%{opacity:0.9} 100%{opacity:0}
+        }
+        @keyframes mgShake {
+          0%,100%{transform:translate(0,0)}
+          20%{transform:translate(-6px,3px)}
+          40%{transform:translate(5px,-4px)}
+          60%{transform:translate(-4px,-2px)}
+          80%{transform:translate(6px,2px)}
+        }
+        @keyframes mgLightning {
+          0%,100%{opacity:0.15} 50%{opacity:0.55}
+        }
+        @keyframes mgFloatTitle {
+          0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)}
+        }
+      `}</style>
+
+      {/* 3D void corridor floor */}
+      <div style={{
+        position: "absolute", inset: 0, perspective: "700px",
+        overflow: "hidden", pointerEvents: "none",
+      }}>
+        <div style={{
+          position: "absolute", left: "-50%", right: "-50%", bottom: "-30%",
+          height: "140%",
+          backgroundImage: "repeating-linear-gradient(0deg, rgba(239,68,68,0.18) 0px, transparent 2px, transparent 46px, rgba(239,68,68,0.18) 48px), repeating-linear-gradient(90deg, rgba(239,68,68,0.1) 0px, transparent 2px, transparent 46px, rgba(239,68,68,0.1) 48px)",
+          transformOrigin: "50% 100%",
+          animation: "mgVoidDrift 1.4s linear infinite",
+        }} />
+        {/* ambient red glow from below */}
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "radial-gradient(ellipse at 50% 100%, rgba(239,68,68,0.25) 0%, transparent 60%)",
+        }} />
+        {/* lightning cracks */}
+        {[
+          "M10,90 L25,40 L18,42 L35,5",
+          "M85,95 L70,55 L78,53 L60,10",
+          "M50,98 L55,60 L48,58 L52,20",
+        ].map((d, i) => (
+          <svg key={i} viewBox="0 0 100 100" style={{
+            position: "absolute", left: `${10 + i * 30}%`, top: 0,
+            width: "120px", height: "100%", opacity: 0.3,
+            animation: `mgLightning ${1.6 + i * 0.4}s ease-in-out infinite`,
+            animationDelay: i * 0.3 + "s",
+          }}>
+            <path d={d} stroke="#F87171" strokeWidth="1" fill="none" />
+          </svg>
+        ))}
+      </div>
+
+      {/* Impact flash */}
+      {impactFlash && (
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 5, pointerEvents: "none",
+          background: "radial-gradient(circle, rgba(255,255,255,0.5) 0%, rgba(239,68,68,0.25) 35%, transparent 70%)",
+          animation: "mgImpactFlash 0.18s ease forwards",
+        }} />
+      )}
+
+      {/* Camera-shake wrapper for main scene */}
+      <div style={{
+        position: "relative", zIndex: 2, width: "min(560px, 94vw)",
+        animation: shake ? "mgShake 0.28s ease" : "none",
+      }}>
+        {/* Blade swing layer (3D), keyed to remount each strike */}
+        <div key={swingKey} style={{
+          position: "absolute", inset: "-160px -120px", zIndex: 4,
+          perspective: "900px", pointerEvents: "none",
+        }}>
+          {feedback && (
+            <>
+              {/* trailing afterimages for motion blur */}
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} style={{
+                  position: "absolute", top: "50%", left: "50%",
+                  width: "340px", height: "10px", marginTop: "-5px", marginLeft: "-170px",
+                  background: "linear-gradient(90deg, transparent, rgba(248,113,113,0.5), rgba(255,255,255,0.9), rgba(248,113,113,0.5), transparent)",
+                  borderRadius: "6px",
+                  filter: `blur(${i * 1.5}px)`,
+                  animation: "mgBladeSwing 0.5s cubic-bezier(0.2,0.9,0.3,1) forwards",
+                  animationDelay: i * 0.02 + "s",
+                  opacity: 0,
+                  boxShadow: "0 0 30px #F87171, 0 0 60px #EF4444",
+                }} />
+              ))}
+              {/* core blade */}
+              <div style={{
+                position: "absolute", top: "50%", left: "50%",
+                width: "360px", height: "14px", marginTop: "-7px", marginLeft: "-180px",
+                background: "linear-gradient(90deg, transparent, #fff 30%, #FCA5A5 50%, #fff 70%, transparent)",
+                borderRadius: "8px",
+                animation: "mgBladeSwing 0.5s cubic-bezier(0.2,0.9,0.3,1) forwards",
+                opacity: 0,
+                boxShadow: "0 0 40px #fff, 0 0 80px #F87171",
+              }} />
+            </>
+          )}
+        </div>
+
+        <div style={{
+          padding: "32px 28px",
+          border: `1px solid ${ringColor}66`,
+          borderRadius: "16px",
+          background: "linear-gradient(160deg, rgba(30,0,8,0.85), rgba(3,0,10,0.92))",
+          textAlign: "center",
+          boxShadow: `0 0 50px ${ringColor}33, inset 0 0 60px rgba(0,0,0,0.4)`,
+          backdropFilter: "blur(4px)",
+        }}>
+          <button onClick={onClose} style={{
+            position: "absolute", top: "12px", right: "14px",
+            background: "none", border: "none", color: "#6B7280",
+            fontSize: "18px", cursor: "pointer", zIndex: 10,
+          }}>✕</button>
+
+          <div style={{
+            fontSize: "11px", letterSpacing: "0.4em", color: "#F87171", marginBottom: "6px",
+            animation: "mgFloatTitle 2.4s ease-in-out infinite",
+          }}>
+            ⚡ NIHILITY SEQUENCE ⚡
+          </div>
+          <div style={{
+            fontSize: "clamp(20px,3vw,30px)", fontWeight: "bold",
+            color: "#FCA5A5", textShadow: "0 0 24px #EF4444, 0 0 50px #B91C1C", marginBottom: "4px",
+            letterSpacing: "0.05em",
+          }}>
+            Acheron — Stellaron Annihilation
+          </div>
+          <div style={{ color: "#9CA3AF", fontSize: "13px", marginBottom: "28px" }}>
+            Strike {stage} of 3 — SLASH when the ring locks onto the target
+          </div>
+
+          {/* 3D ground reticle */}
+          <div style={{
+            position: "relative", width: "100%", height: "180px",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            perspective: "500px", marginBottom: "24px",
+          }}>
+            <div style={{
+              position: "relative", width: "180px", height: "180px",
+              transformStyle: "preserve-3d", transform: "rotateX(58deg)",
+            }}>
+              {/* fixed target ring (ground) */}
+              <div style={{
+                position: "absolute", inset: 0, borderRadius: "50%",
+                border: "2px solid rgba(252,211,77,0.8)",
+                boxShadow: "0 0 20px rgba(252,211,77,0.5), inset 0 0 20px rgba(252,211,77,0.3)",
+              }} />
+              {/* tolerance band, subtle */}
+              <div style={{
+                position: "absolute",
+                inset: `${-(tolerance) * 90}px`,
+                borderRadius: "50%",
+                border: "1px dashed rgba(252,211,77,0.25)",
+              }} />
+              {/* closing ring (the player times this) */}
+              <div style={{
+                position: "absolute",
+                top: "50%", left: "50%",
+                width: "180px", height: "180px",
+                marginTop: "-90px", marginLeft: "-90px",
+                borderRadius: "50%",
+                border: `3px solid ${ringColor}`,
+                boxShadow: `0 0 30px ${ringColor}99`,
+                transform: `scale(${ringScale})`,
+                animation: "mgRingPulse 0.6s ease-in-out infinite",
+                opacity: locked ? 0.3 : 1,
+              }} />
+              {/* center mark */}
+              <div style={{
+                position: "absolute", top: "50%", left: "50%",
+                width: "8px", height: "8px", marginTop: "-4px", marginLeft: "-4px",
+                borderRadius: "50%", background: "#fff",
+                boxShadow: "0 0 10px #fff",
+              }} />
+            </div>
+          </div>
+
+          {/* Stage pips */}
+          <div style={{ display: "flex", gap: "10px", justifyContent: "center", marginBottom: "20px" }}>
+            {[1, 2, 3].map((n) => (
+              <div key={n} style={{
+                width: "10px", height: "10px", borderRadius: "50%",
+                background: n < stage ? "#F87171" : n === stage ? "#FCD34D" : "rgba(255,255,255,0.15)",
+                boxShadow: n <= stage ? "0 0 8px currentColor" : "none",
+                transition: "all 0.3s",
+              }} />
+            ))}
+          </div>
+
+          {/* Feedback */}
+          <div style={{ height: "28px", marginBottom: "12px" }}>
+            {feedback && (
+              <div style={{
+                fontSize: "20px", fontWeight: "bold",
+                color: feedback === "PERFECT" ? "#FCD34D" : feedback === "HIT" ? "#F87171" : "#6B7280",
+                letterSpacing: "0.2em",
+                animation: "mgFeedbackPop 0.6s ease forwards",
+              }}>
+                {feedback === "PERFECT" ? "✦ PERFECT SLASH ✦" : feedback === "HIT" ? "⚔ CLEAN HIT" : "MISS"}
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={strike}
+            disabled={locked}
+            className="btn-crimson"
+            style={{
+              fontSize: "16px", padding: "16px 48px",
+              opacity: locked ? 0.5 : 1,
+              cursor: locked ? "not-allowed" : "pointer",
+            }}
+          >
+            ⚔ SLASH
+          </button>
+
+          <div style={{ marginTop: "16px", color: "#4B5563", fontSize: "11px", letterSpacing: "0.15em" }}>
+            {misses > 0 ? `${misses} miss${misses > 1 ? "es" : ""} so far — every strike still counts` : "Time it well, Trailblazer"}
+          </div>
+        </div>
       </div>
     </div>
   );
