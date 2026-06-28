@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 
 const CHARACTERS = [
   {
@@ -92,7 +92,7 @@ export default function App() {
   const [unlockedAchievements, setUnlockedAchievements] = useState([]);
   const [showAchievement, setShowAchievement] = useState(null);
   const [hoveredChar, setHoveredChar] = useState(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const mouseGlowRef = useRef(null);
   const [confettiActive, setConfettiActive] = useState(false);
   const [cakeBlown, setCakeBlown] = useState(false);
   const [candleCount, setCandleCount] = useState(21);
@@ -101,9 +101,7 @@ export default function App() {
   const [showEasterEgg, setShowEasterEgg] = useState(false);
   const [easterEggClicks, setEasterEggClicks] = useState(0);
   const [visibleCards, setVisibleCards] = useState({});
-  const [particles, setParticles] = useState([]);
   const [confettiPieces, setConfettiPieces] = useState([]);
-  const [shootingStars, setShootingStars] = useState([]);
   const [titleGlitch, setTitleGlitch] = useState(false);
   const [slashActive, setSlashActive] = useState(false);
   const [slashParticles, setSlashParticles] = useState([]);
@@ -170,51 +168,18 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    let raf = null;
     const handleMouseMove = (e) => {
-      setMousePos({ x: e.clientX, y: e.clientY });
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        if (mouseGlowRef.current) {
+          mouseGlowRef.current.style.transform = `translate3d(${e.clientX - 200}px, ${e.clientY - 200}px, 0)`;
+        }
+        raf = null;
+      });
     };
-    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
     return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
-
-  useEffect(() => {
-    const spawnStar = () => {
-      const id = Date.now() + Math.random();
-      setShootingStars((prev) => [...prev, {
-        id,
-        top: Math.random() * 60 + "%",
-        left: "-100px",
-        duration: Math.random() * 2 + 1.5,
-        delay: 0,
-        size: Math.random() * 2 + 1,
-      }]);
-      setTimeout(() => {
-        setShootingStars((prev) => prev.filter((s) => s.id !== id));
-      }, 4000);
-    };
-    const interval = setInterval(spawnStar, 2500);
-    spawnStar();
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const spawnParticle = () => {
-      const id = Date.now() + Math.random();
-      setParticles((prev) => [
-        ...prev.slice(-30),
-        {
-          id,
-          x: Math.random() * 100,
-          y: Math.random() * 100,
-          size: Math.random() * 4 + 2,
-          opacity: Math.random() * 0.6 + 0.3,
-          color: ["#C084FC", "#F87171", "#FB923C", "#818CF8", "#FCD34D", "#67E8F9"][Math.floor(Math.random() * 6)],
-          duration: Math.random() * 8 + 6,
-        },
-      ]);
-    };
-    const interval = setInterval(spawnParticle, 600);
-    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -350,14 +315,33 @@ export default function App() {
     setMusicPlaying((p) => !p);
   };
 
-  const STARS = Array.from({ length: 120 }, (_, i) => ({
+  const STARS = useMemo(() => Array.from({ length: 80 }, (_, i) => ({
     id: i,
     x: Math.random() * 100,
     y: Math.random() * 100,
     size: Math.random() * 2.5 + 0.5,
     opacity: Math.random() * 0.7 + 0.2,
     duration: Math.random() * 4 + 3,
-  }));
+  })), []);
+
+  const AMBIENT_PARTICLES = useMemo(() => Array.from({ length: 16 }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    size: Math.random() * 4 + 2,
+    opacity: Math.random() * 0.5 + 0.3,
+    color: ["#C084FC", "#F87171", "#FB923C", "#818CF8", "#FCD34D", "#67E8F9"][i % 6],
+    duration: Math.random() * 8 + 8,
+    delay: Math.random() * 8,
+  })), []);
+
+  const AMBIENT_SHOOTING_STARS = useMemo(() => Array.from({ length: 4 }, (_, i) => ({
+    id: i,
+    top: Math.random() * 50 + "%",
+    size: Math.random() * 2 + 1,
+    duration: Math.random() * 2 + 2,
+    delay: i * 3 + Math.random() * 2,
+  })), []);
 
   if (isLocked) {
     return (
@@ -536,6 +520,13 @@ export default function App() {
           50%{transform:translateY(-40px) scale(1.2);opacity:calc(var(--op)*1.3)}
           100%{transform:translateY(-80px) scale(0.8);opacity:0}
         }
+        @keyframes particleFloatLoop {
+          0%{transform:translateY(0) scale(1);opacity:0}
+          15%{opacity:var(--op)}
+          50%{transform:translateY(-50px) scale(1.15);opacity:calc(var(--op)*1.2)}
+          85%{opacity:var(--op)}
+          100%{transform:translateY(-100px) scale(0.85);opacity:0}
+        }
         @keyframes cardEnter {
           from{transform:translateY(40px);opacity:0}
           to{transform:translateY(0);opacity:1}
@@ -682,12 +673,14 @@ export default function App() {
       `}</style>
 
       {/* Mouse glow */}
-      <div style={{
+      <div ref={mouseGlowRef} style={{
         position: "fixed", pointerEvents: "none", zIndex: 999,
-        left: mousePos.x - 200, top: mousePos.y - 200,
+        top: 0, left: 0,
         width: 400, height: 400,
         background: "radial-gradient(circle, rgba(168,85,247,0.06) 0%, transparent 70%)",
-        borderRadius: "50%", transition: "left 0.1s, top 0.1s",
+        borderRadius: "50%",
+        willChange: "transform",
+        transform: "translate3d(-200px, -200px, 0)",
       }} />
 
       {/* Achievement Toast */}
@@ -985,13 +978,14 @@ export default function App() {
       </div>
 
       {/* Shooting stars */}
-      {shootingStars.map((s) => (
+      {AMBIENT_SHOOTING_STARS.map((s) => (
         <div key={s.id} style={{
-          position: "fixed", top: s.top, left: s.left, zIndex: 1, pointerEvents: "none",
+          position: "fixed", top: s.top, left: "-150px", zIndex: 1, pointerEvents: "none",
           width: "150px", height: s.size + "px",
           background: "linear-gradient(90deg, transparent, #fff, #C084FC)",
           borderRadius: "2px", opacity: 0.8,
-          animation: `shootingStar ${s.duration}s linear forwards`,
+          willChange: "transform, opacity",
+          animation: `shootingStar ${s.duration}s linear ${s.delay}s infinite`,
         }} />
       ))}
 
@@ -1002,30 +996,34 @@ export default function App() {
           background: "radial-gradient(ellipse, rgba(124,58,237,0.12) 0%, transparent 70%)",
           animation: "auroraMove 20s ease-in-out infinite",
           borderRadius: "50%",
+          willChange: "transform",
         }} />
         <div style={{
           position: "absolute", top: "10%", right: "-20%", width: "60%", height: "40%",
           background: "radial-gradient(ellipse, rgba(239,68,68,0.08) 0%, transparent 70%)",
           animation: "auroraMove2 25s ease-in-out infinite",
           borderRadius: "50%",
+          willChange: "transform",
         }} />
         <div style={{
           position: "absolute", bottom: "5%", left: "20%", width: "60%", height: "35%",
           background: "radial-gradient(ellipse, rgba(99,102,241,0.1) 0%, transparent 70%)",
           animation: "auroraMove 30s ease-in-out infinite reverse",
           borderRadius: "50%",
+          willChange: "transform",
         }} />
       </div>
 
-      {/* Floating particles */}
-      {particles.map((p) => (
+      {/* Floating particles (fixed pool, CSS-driven loop) */}
+      {AMBIENT_PARTICLES.map((p) => (
         <div key={p.id} style={{
           position: "fixed", left: p.x + "%", top: p.y + "%",
           width: p.size + "px", height: p.size + "px",
           borderRadius: "50%", background: p.color,
           pointerEvents: "none", zIndex: 1,
           "--op": p.opacity,
-          animation: `particleFloat ${p.duration}s ease-in forwards`,
+          willChange: "transform, opacity",
+          animation: `particleFloatLoop ${p.duration}s ease-in-out ${p.delay}s infinite`,
           boxShadow: `0 0 ${p.size * 2}px ${p.color}`,
         }} />
       ))}
