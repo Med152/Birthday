@@ -35,7 +35,7 @@ const CHARACTERS = [
     border: "rgba(239,68,68,0.4)",
     particles: ["⚡", "⚔", "✦", "⋆"],
     icon: "⚔️",
-    image: "https://i.pinimg.com/474x/35/02/33/35023309e81a8b7dfd8c14b2055552c1.jpg",
+    image: "https://upload-os-bbs.hoyolab.com/upload/2024/04/27/335280284/967431fc767140dd26818fca6e877664_6601279306635630814.png",
   },
   {
     id: "kafka",
@@ -53,7 +53,7 @@ const CHARACTERS = [
     border: "rgba(249,115,22,0.4)",
     particles: ["◈", "⬡", "⬢", "◆"],
     icon: "🎴",
-    image: "https://i.pinimg.com/736x/9d/ed/51/9ded51da8b4c8adf36b885f6d2c0c736.jpg",
+    image: "https://cdn2.cdnstep.com/OCTvaRhXxMvyrB0EuYXT/cover-1.png",
   },
   {
     id: "blackswan",
@@ -71,7 +71,7 @@ const CHARACTERS = [
     border: "rgba(99,102,241,0.4)",
     particles: ["◉", "○", "◎", "●"],
     icon: "🦢",
-    image: "https://i.pinimg.com/736x/65/2d/ec/652dec6ef5b1ccd2f2b155cbb9428924.jpg",
+    image: "https://cdn2.cdnstep.com/h7Jp5L0bkDtB5Xvk7gNA/3-1.png",
   },
 ];
 
@@ -112,6 +112,8 @@ export default function App() {
   const [showFinisher, setShowFinisher] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
   const [canSkipVideo, setCanSkipVideo] = useState(false);
+  const [showGlassBreak, setShowGlassBreak] = useState(false);
+  const [showPrize, setShowPrize] = useState(false);
   const heroRef = useRef(null);
   const canvasRef = useRef(null);
   const audioRef = useRef(null);
@@ -268,7 +270,21 @@ export default function App() {
     setTimeout(() => triggerConfetti(), 700);
     setTimeout(() => { setShowVideo(true); setCanSkipVideo(false); }, 1500);
     setTimeout(() => setCanSkipVideo(true), 1500 + 6000);
+    // Auto-end the cutscene after a single watch-through if never skipped
+    setTimeout(() => endCutsceneRef.current && endCutsceneRef.current(), 1500 + 30000);
   };
+
+  const endCutscene = useCallback(() => {
+    setShowVideo(false);
+    setShowGlassBreak(true);
+    setTimeout(() => {
+      setShowGlassBreak(false);
+      setShowPrize(true);
+    }, 900);
+  }, []);
+
+  const endCutsceneRef = useRef(null);
+  useEffect(() => { endCutsceneRef.current = endCutscene; }, [endCutscene]);
 
   const blowCandle = (i) => {
     if (blownCandles.includes(i)) return;
@@ -455,6 +471,18 @@ export default function App() {
         }
         @keyframes counterPulse {
           0%,100%{transform:scale(1)} 50%{transform:scale(1.05)}
+        }
+        @keyframes glassCrack {
+          0%{opacity:0} 100%{opacity:1}
+        }
+        @keyframes shardFly {
+          0%{ transform:translate(-50%,-50%) rotate(0deg); opacity:1; }
+          100%{ transform:translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--rot)); opacity:0; }
+        }
+        @keyframes prizePop {
+          0%{transform:scale(0.6) rotate(-4deg);opacity:0}
+          60%{transform:scale(1.05) rotate(1deg);opacity:1}
+          100%{transform:scale(1) rotate(0deg);opacity:1}
         }
         @keyframes slashAnimation {
           0%{
@@ -666,7 +694,7 @@ export default function App() {
             position: "absolute", inset: 0,
           }}>
             <iframe
-              src="https://streamable.com/e/yzvnbh?autoplay=1&muted=0&nocontrols=1"
+              src="https://streamable.com/e/yzvnbh?autoplay=1&muted=0&nocontrols=1&loop=0"
               frameBorder="0"
               allow="autoplay; fullscreen"
               style={{
@@ -697,7 +725,7 @@ export default function App() {
           {/* Skip button, only available after a few seconds */}
           {canSkipVideo && (
             <button
-              onClick={() => setShowVideo(false)}
+              onClick={endCutscene}
               style={{
                 position: "absolute", bottom: "8vh", right: "24px", zIndex: 4,
                 background: "rgba(0,0,0,0.5)",
@@ -712,6 +740,108 @@ export default function App() {
               SKIP ▶▶
             </button>
           )}
+        </div>
+      )}
+
+      {/* Glass shatter transition when cutscene ends */}
+      {showGlassBreak && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 9999,
+          pointerEvents: "none", overflow: "hidden",
+          background: "#000",
+        }}>
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
+            {Array.from({ length: 14 }).map((_, i) => {
+              const cx = 50, cy = 50;
+              const angle = (i / 14) * Math.PI * 2;
+              const len = 60 + (i % 3) * 10;
+              const x2 = cx + Math.cos(angle) * len;
+              const y2 = cy + Math.sin(angle) * len;
+              return (
+                <line key={i} x1={cx} y1={cy} x2={x2} y2={y2}
+                  stroke="rgba(255,255,255,0.5)" strokeWidth="0.3"
+                  style={{ animation: `glassCrack 0.5s ${i * 0.02}s ease forwards`, opacity: 0 }} />
+              );
+            })}
+          </svg>
+          {/* shattering shards */}
+          {Array.from({ length: 22 }).map((_, i) => {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 40 + Math.random() * 60;
+            return (
+              <div key={i} style={{
+                position: "absolute", top: "50%", left: "50%",
+                width: 20 + Math.random() * 30 + "px",
+                height: 20 + Math.random() * 30 + "px",
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.3)",
+                clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
+                "--dx": Math.cos(angle) * dist + "vw",
+                "--dy": Math.sin(angle) * dist + "vh",
+                "--rot": (Math.random() * 720 - 360) + "deg",
+                animation: `shardFly 0.7s ${0.1 + Math.random() * 0.15}s ease-out forwards`,
+              }} />
+            );
+          })}
+        </div>
+      )}
+
+      {/* Prize popup */}
+      {showPrize && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 9999,
+          background: "rgba(3,0,10,0.92)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          backdropFilter: "blur(8px)",
+        }}>
+          <div style={{
+            width: "min(480px, 90vw)",
+            padding: "40px 32px",
+            borderRadius: "16px",
+            border: "1px solid rgba(252,211,77,0.5)",
+            background: "linear-gradient(160deg, rgba(40,25,0,0.9), rgba(5,0,16,0.96))",
+            boxShadow: "0 0 80px rgba(252,211,77,0.25)",
+            textAlign: "center",
+            position: "relative",
+            animation: "prizePop 0.6s cubic-bezier(0.16,1.2,0.4,1) forwards",
+          }}>
+            <div style={{ fontSize: "56px", marginBottom: "12px", animation: "floatSlow 3s ease-in-out infinite" }}>
+              🎁
+            </div>
+            <div style={{
+              fontSize: "11px", letterSpacing: "0.4em", color: "#FCD34D", marginBottom: "10px",
+            }}>
+              ✦ A TRANSMISSION ARRIVES ✦
+            </div>
+            <div style={{
+              fontSize: "clamp(20px,3vw,28px)", fontWeight: "bold",
+              background: "linear-gradient(135deg, #FCD34D, #F87171)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              marginBottom: "18px",
+            }}>
+              A Gift From Shicmuon
+            </div>
+            <p style={{ color: "#D1D5DB", fontSize: "14.5px", lineHeight: 1.7, marginBottom: "10px" }}>
+              Five years of friendship, written across timelines and trails — and still going.
+            </p>
+            <p style={{ color: "#A78BFA", fontSize: "14px", lineHeight: 1.7, fontStyle: "italic" }}>
+              Happy Birthday, Khaled. This one's just for you.
+            </p>
+            <div style={{
+              marginTop: "24px", display: "flex", gap: "6px", alignItems: "center", justifyContent: "center",
+            }}>
+              {[0,1,2,3,4].map((s) => (
+                <span key={s} style={{ color: "#FCD34D", opacity: 0.7, fontSize: "14px" }}>✦</span>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowPrize(false)}
+              className="btn-cosmic"
+              style={{ marginTop: "28px", fontSize: "13px", padding: "12px 32px" }}
+            >
+              Open With Gratitude
+            </button>
+          </div>
         </div>
       )}
 
