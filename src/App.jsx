@@ -93,6 +93,9 @@ export default function App() {
   const [showAchievement, setShowAchievement] = useState(null);
   const [hoveredChar, setHoveredChar] = useState(null);
   const mouseGlowRef = useRef(null);
+  const [isLocked, setIsLocked] = useState(true);
+  const [lockTimeLeft, setLockTimeLeft] = useState({});
+  const BIRTHDAY_DATE = new Date("2026-07-10T00:00:00");
   const [confettiActive, setConfettiActive] = useState(false);
   const [cakeBlown, setCakeBlown] = useState(false);
   const [candleCount, setCandleCount] = useState(21);
@@ -112,9 +115,7 @@ export default function App() {
   const [canSkipVideo, setCanSkipVideo] = useState(false);
   const [showGlassBreak, setShowGlassBreak] = useState(false);
   const [showPrize, setShowPrize] = useState(false);
-  const [isLocked, setIsLocked] = useState(true);
-  const [lockTimeLeft, setLockTimeLeft] = useState({});
-  const BIRTHDAY_DATE = new Date("2026-07-07T00:00:00");
+  
   const heroRef = useRef(null);
   const canvasRef = useRef(null);
   const audioRef = useRef(null);
@@ -1126,7 +1127,7 @@ export default function App() {
             maxWidth: "900px",
           }}
         >
-          Happy Birthday<br />Khaled 7 Juliet 2004
+          Happy Birthday<br />Khaled 10 Juillet 2004
         </h1>
 
         <p style={{
@@ -1373,7 +1374,7 @@ export default function App() {
           Happy Birthday Khaled ✦
         </div>
         <p style={{ color: "#6B7280", fontSize: "13px", letterSpacing: "0.2em" }}>
-          7 Juliet 2004 · Forever a Legend · Made with ✦
+          10 Juillet 2004 · Forever a Legend · Made with ✦
         </p>
         <div style={{ marginTop: "24px", color: "#374151", fontSize: "11px", letterSpacing: "0.3em" }}>
           HONKAI: STAR RAIL BIRTHDAY PORTAL · NOT AFFILIATED WITH HOYOVERSE
@@ -1392,7 +1393,7 @@ export default function App() {
 }
 
 function BirthdayCounter({ unlock }) {
-  const birthday = new Date("2026-07-07T00:00:00");
+  const birthday = new Date("2026-07-10T00:00:00");
   const [timeLeft, setTimeLeft] = useState({});
   const [isBirthday, setIsBirthday] = useState(false);
 
@@ -1791,7 +1792,7 @@ function BirthdayCake({ candleCount, blownCandles, onBlowCandle, cakeBlown, cake
           }} />
           <div style={{ zIndex: 1, textAlign: "center" }}>
             <div style={{ color: "#8B5CF6", fontSize: "11px", letterSpacing: "0.3em" }}>
-              7 JULIET 2004
+              10 JUILLET 2004
             </div>
             <div style={{ color: "#6B7280", fontSize: "10px", marginTop: "4px", letterSpacing: "0.1em" }}>
               {blownCandles.length}/{candleCount} candles blown
