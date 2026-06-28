@@ -114,6 +114,9 @@ export default function App() {
   const [canSkipVideo, setCanSkipVideo] = useState(false);
   const [showGlassBreak, setShowGlassBreak] = useState(false);
   const [showPrize, setShowPrize] = useState(false);
+  const [isLocked, setIsLocked] = useState(true);
+  const [lockTimeLeft, setLockTimeLeft] = useState({});
+  const BIRTHDAY_DATE = new Date("2026-07-07T00:00:00");
   const heroRef = useRef(null);
   const canvasRef = useRef(null);
   const audioRef = useRef(null);
@@ -128,6 +131,27 @@ export default function App() {
       }
     }
   }, [unlockedAchievements]);
+
+  useEffect(() => {
+    const calc = () => {
+      const now = new Date();
+      const diff = BIRTHDAY_DATE - now;
+      if (diff <= 0) {
+        setIsLocked(false);
+        return;
+      }
+      setIsLocked(true);
+      setLockTimeLeft({
+        days: Math.floor(diff / 86400000),
+        hours: Math.floor((diff % 86400000) / 3600000),
+        minutes: Math.floor((diff % 3600000) / 60000),
+        seconds: Math.floor((diff % 60000) / 1000),
+      });
+    };
+    calc();
+    const t = setInterval(calc, 1000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     let p = 0;
@@ -334,6 +358,90 @@ export default function App() {
     opacity: Math.random() * 0.7 + 0.2,
     duration: Math.random() * 4 + 3,
   }));
+
+  if (isLocked) {
+    return (
+      <div style={{
+        minHeight: "100vh", background: "#050010",
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        fontFamily: "'Georgia', serif", position: "relative", overflow: "hidden",
+        padding: "24px",
+      }}>
+        <div style={{ position: "absolute", inset: 0 }}>
+          {STARS.slice(0, 60).map((s) => (
+            <div key={s.id} style={{
+              position: "absolute", left: s.x + "%", top: s.y + "%",
+              width: s.size + "px", height: s.size + "px",
+              borderRadius: "50%", background: "#fff",
+              opacity: s.opacity,
+              animation: `twinkle ${s.duration}s ease-in-out infinite alternate`,
+            }} />
+          ))}
+        </div>
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "radial-gradient(ellipse at 50% 50%, rgba(239,68,68,0.1) 0%, transparent 60%)",
+        }} />
+        <div style={{ textAlign: "center", zIndex: 10, maxWidth: "560px" }}>
+          <div style={{ fontSize: "44px", marginBottom: "8px" }}>🔒</div>
+          <div style={{
+            fontSize: "11px", letterSpacing: "0.5em", color: "#F87171",
+            textTransform: "uppercase", marginBottom: "20px",
+          }}>
+            ✦ Access Sealed ✦
+          </div>
+          <div style={{
+            fontSize: "clamp(20px, 4vw, 32px)", fontWeight: "bold",
+            color: "#FCA5A5", textShadow: "0 0 30px #EF4444, 0 0 60px #B91C1C",
+            marginBottom: "16px", lineHeight: 1.4,
+          }}>
+            You can't access this site<br />until the cooldown reaches 0
+          </div>
+          <p style={{ color: "#9CA3AF", fontSize: "14px", marginBottom: "36px" }}>
+            The stars are still aligning, Trailblazer. Return when the countdown ends.
+          </p>
+
+          <div style={{
+            padding: "24px 28px", borderRadius: "12px",
+            border: "1px solid rgba(239,68,68,0.3)",
+            background: "rgba(124,0,0,0.08)",
+          }}>
+            <div style={{ display: "flex", gap: "clamp(10px,3vw,28px)", justifyContent: "center", flexWrap: "wrap" }}>
+              {[
+                { val: lockTimeLeft.days, label: "DAYS" },
+                { val: lockTimeLeft.hours, label: "HOURS" },
+                { val: lockTimeLeft.minutes, label: "MINS" },
+                { val: lockTimeLeft.seconds, label: "SECS" },
+              ].map(({ val, label }) => (
+                <div key={label} style={{ textAlign: "center", minWidth: "56px" }}>
+                  <div style={{
+                    fontSize: "clamp(26px,5vw,42px)", fontWeight: "bold",
+                    color: "#F87171", lineHeight: 1,
+                    textShadow: "0 0 20px rgba(239,68,68,0.6)",
+                    animation: "counterPulse 1s ease-in-out infinite",
+                  }}>
+                    {String(val ?? 0).padStart(2, "0")}
+                  </div>
+                  <div style={{ fontSize: "10px", letterSpacing: "0.3em", color: "#6B7280", marginTop: "6px" }}>
+                    {label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginTop: "28px", color: "#4B5563", fontSize: "11px", letterSpacing: "0.2em" }}>
+            THIS PAGE WILL UNLOCK AUTOMATICALLY
+          </div>
+        </div>
+        <style>{`
+          @keyframes twinkle { from { opacity: 0.1; } to { opacity: 0.9; } }
+          @keyframes counterPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+        `}</style>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
