@@ -115,6 +115,7 @@ export default function App() {
   const [canSkipVideo, setCanSkipVideo] = useState(false);
   const [showGlassBreak, setShowGlassBreak] = useState(false);
   const [showPrize, setShowPrize] = useState(false);
+  const [showIpWarning, setShowIpWarning] = useState(false);
   
   const heroRef = useRef(null);
   const canvasRef = useRef(null);
@@ -275,6 +276,13 @@ export default function App() {
 
   const endCutsceneRef = useRef(null);
   useEffect(() => { endCutsceneRef.current = endCutscene; }, [endCutscene]);
+
+  useEffect(() => {
+    if (!loading) {
+      const t = setTimeout(() => setShowIpWarning(true), 2500);
+      return () => clearTimeout(t);
+    }
+  }, [loading]);
 
   const blowCandle = (i) => {
     if (blownCandles.includes(i)) return;
@@ -947,6 +955,13 @@ export default function App() {
         </div>
       )}
 
+      {/* Joke IP Warning Popup */}
+      {showIpWarning && (
+        <IpWarning
+          onClose={() => setShowIpWarning(false)}
+          allUnlocked={unlockedAchievements.length >= ACHIEVEMENTS.length}
+        />
+      )}
 
       {confettiPieces.map((p) => (
         <div key={p.id} style={{
@@ -2130,6 +2145,288 @@ function SlashMinigame({ onComplete, onClose }) {
 
           <div style={{ marginTop: "16px", color: "#4B5563", fontSize: "11px", letterSpacing: "0.15em" }}>
             {misses > 0 ? `${misses} miss${misses > 1 ? "es" : ""} so far — every strike still counts` : "Time it well, Trailblazer"}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IpWarning({ onClose, allUnlocked }) {
+  const [glitch, setGlitch] = useState(false);
+  const [scanLine, setScanLine] = useState(0);
+  const [blink, setBlink] = useState(true);
+
+  useEffect(() => {
+    const glitchInterval = setInterval(() => {
+      setGlitch(true);
+      setTimeout(() => setGlitch(false), 120);
+    }, 1800);
+    const scanInterval = setInterval(() => {
+      setScanLine((s) => (s + 2) % 100);
+    }, 30);
+    const blinkInterval = setInterval(() => setBlink((b) => !b), 500);
+    return () => {
+      clearInterval(glitchInterval);
+      clearInterval(scanInterval);
+      clearInterval(blinkInterval);
+    };
+  }, []);
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 99999,
+      background: "rgba(0,0,0,0.88)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      backdropFilter: "blur(4px)",
+      fontFamily: "'Courier New', monospace",
+    }}>
+      <style>{`
+        @keyframes ipGlitch1 {
+          0%{clip-path:inset(0 0 95% 0)} 10%{clip-path:inset(30% 0 50% 0)}
+          20%{clip-path:inset(70% 0 10% 0)} 30%{clip-path:inset(10% 0 80% 0)}
+          40%{clip-path:inset(50% 0 30% 0)} 50%{clip-path:inset(20% 0 60% 0)}
+          60%{clip-path:inset(80% 0 5% 0)} 100%{clip-path:inset(0 0 95% 0)}
+        }
+        @keyframes ipGlitch2 {
+          0%{clip-path:inset(50% 0 30% 0);transform:translate(-4px,0)}
+          20%{clip-path:inset(10% 0 70% 0);transform:translate(4px,0)}
+          40%{clip-path:inset(60% 0 20% 0);transform:translate(-2px,0)}
+          60%{clip-path:inset(30% 0 50% 0);transform:translate(6px,0)}
+          80%{clip-path:inset(80% 0 5% 0);transform:translate(-4px,0)}
+          100%{clip-path:inset(50% 0 30% 0);transform:translate(0,0)}
+        }
+        @keyframes ipScan {
+          0%{top:0%} 100%{top:100%}
+        }
+        @keyframes ipShake {
+          0%,100%{transform:translate(0,0)}
+          10%{transform:translate(-3px,2px)}
+          20%{transform:translate(3px,-1px)}
+          30%{transform:translate(-2px,3px)}
+          40%{transform:translate(2px,-2px)}
+          50%{transform:translate(-3px,1px)}
+          60%{transform:translate(3px,2px)}
+          70%{transform:translate(-1px,-2px)}
+          80%{transform:translate(2px,3px)}
+          90%{transform:translate(-2px,-1px)}
+        }
+        @keyframes ipTypeIn {
+          from{width:0} to{width:100%}
+        }
+        @keyframes ipFlicker {
+          0%,100%{opacity:1} 92%{opacity:1} 93%{opacity:0.4} 95%{opacity:1} 97%{opacity:0.6} 99%{opacity:1}
+        }
+        @keyframes ipPulseRed {
+          0%,100%{box-shadow:0 0 20px rgba(239,68,68,0.4),0 0 0 1px rgba(239,68,68,0.3)}
+          50%{box-shadow:0 0 50px rgba(239,68,68,0.8),0 0 0 1px rgba(239,68,68,0.8)}
+        }
+        @keyframes ipPulseGreen {
+          0%,100%{box-shadow:0 0 20px rgba(74,222,128,0.4),0 0 0 1px rgba(74,222,128,0.3)}
+          50%{box-shadow:0 0 50px rgba(74,222,128,0.7),0 0 0 1px rgba(74,222,128,0.8)}
+        }
+        @keyframes safeSlide {
+          0%{transform:scaleX(0)} 100%{transform:scaleX(1)}
+        }
+        @keyframes ipErrorPop {
+          0%{transform:scale(0.8);opacity:0}
+          60%{transform:scale(1.05);opacity:1}
+          100%{transform:scale(1);opacity:1}
+        }
+      `}</style>
+
+      <div style={{
+        width: "min(560px, 92vw)",
+        position: "relative",
+        animation: allUnlocked ? "ipErrorPop 0.4s ease forwards" : (glitch ? "ipShake 0.12s ease" : "ipErrorPop 0.4s ease forwards"),
+      }}>
+        {/* Glitch layers (only for danger state) */}
+        {!allUnlocked && glitch && (
+          <>
+            <div style={{
+              position: "absolute", inset: 0, color: "#F87171",
+              fontSize: "12px", overflow: "hidden", zIndex: 2, pointerEvents: "none",
+              animation: "ipGlitch1 0.12s steps(1) forwards",
+              background: "rgba(239,68,68,0.05)",
+              filter: "blur(1px)",
+            }} />
+            <div style={{
+              position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none",
+              animation: "ipGlitch2 0.12s steps(1) forwards",
+              background: "rgba(0,255,200,0.03)",
+            }} />
+          </>
+        )}
+
+        <div style={{
+          borderRadius: "8px", overflow: "hidden",
+          border: allUnlocked ? "1px solid rgba(74,222,128,0.5)" : "1px solid rgba(239,68,68,0.6)",
+          animation: allUnlocked ? "ipPulseGreen 2s ease-in-out infinite" : "ipPulseRed 1.2s ease-in-out infinite",
+          animation: allUnlocked ? "ipErrorPop 0.4s ease forwards, ipPulseGreen 2s 0.4s ease-in-out infinite" : "ipErrorPop 0.4s ease forwards, ipPulseRed 1.2s 0.4s ease-in-out infinite",
+          background: allUnlocked ? "rgba(0,10,0,0.97)" : "rgba(8,0,0,0.97)",
+          position: "relative",
+          animation: "ipFlicker 4s ease-in-out infinite",
+        }}>
+          {/* Scanline effect */}
+          <div style={{
+            position: "absolute", left: 0, right: 0, height: "2px",
+            background: allUnlocked ? "rgba(74,222,128,0.08)" : "rgba(239,68,68,0.06)",
+            top: scanLine + "%", zIndex: 1, pointerEvents: "none",
+            transition: "top 0.03s linear",
+          }} />
+          {/* CRT scanline overlay */}
+          <div style={{
+            position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none",
+            backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)",
+          }} />
+
+          {/* Title bar */}
+          <div style={{
+            background: allUnlocked ? "rgba(74,222,128,0.12)" : "rgba(239,68,68,0.12)",
+            borderBottom: allUnlocked ? "1px solid rgba(74,222,128,0.3)" : "1px solid rgba(239,68,68,0.3)",
+            padding: "10px 16px",
+            display: "flex", alignItems: "center", gap: "8px",
+          }}>
+            <div style={{ width: 10, height: 10, borderRadius: "50%", background: allUnlocked ? "#4ADE80" : "#EF4444" }} />
+            <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#FBBF24" }} />
+            <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#374151" }} />
+            <span style={{
+              fontSize: "11px", color: allUnlocked ? "#4ADE80" : "#F87171",
+              letterSpacing: "0.2em", marginLeft: "8px",
+            }}>
+              {allUnlocked ? "SYSTEM_SECURE.exe" : "ERROR_404.exe"}
+            </span>
+          </div>
+
+          <div style={{ padding: "24px 20px 28px", position: "relative", zIndex: 2 }}>
+
+            {/* IP Detection block */}
+            <div style={{
+              marginBottom: "20px",
+              borderLeft: `2px solid ${allUnlocked ? "#4ADE80" : "#EF4444"}`,
+              paddingLeft: "12px",
+            }}>
+              <div style={{ color: "#6B7280", fontSize: "10px", letterSpacing: "0.3em", marginBottom: "6px" }}>
+                &gt; TRACING TARGET...
+              </div>
+              <div style={{ color: "#9CA3AF", fontSize: "12px", lineHeight: 1.9 }}>
+                <span style={{ color: "#4B5563" }}>IP ADDRESS &nbsp;&nbsp; :</span>
+                <span style={{ color: allUnlocked ? "#4ADE80" : "#F87171", marginLeft: 8, fontWeight: "bold" }}>
+                  176.xxx.xx.xxx
+                </span>
+                <br />
+                <span style={{ color: "#4B5563" }}>LOCATION &nbsp;&nbsp;&nbsp;&nbsp; :</span>
+                <span style={{ color: "#FCD34D", marginLeft: 8 }}>Jordan, Amman 🇯🇴</span>
+                <br />
+                <span style={{ color: "#4B5563" }}>DEVICE &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :</span>
+                <span style={{ color: "#D1D5DB", marginLeft: 8 }}>Mobile — Khaled's Phone</span>
+                <br />
+                <span style={{ color: "#4B5563" }}>STATUS &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; :</span>
+                <span style={{ color: allUnlocked ? "#4ADE80" : "#EF4444", marginLeft: 8, fontWeight: "bold" }}>
+                  {blink ? (allUnlocked ? "[ PROTECTED ]" : "[ EXPOSED ]") : ""}
+                </span>
+              </div>
+            </div>
+
+            {!allUnlocked ? (
+              <>
+                {/* DANGER state */}
+                <div style={{
+                  background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
+                  borderRadius: "6px", padding: "16px", marginBottom: "20px",
+                }}>
+                  <div style={{
+                    fontSize: "clamp(20px,4vw,28px)", fontWeight: "bold",
+                    color: "#EF4444", letterSpacing: "0.1em", marginBottom: "10px",
+                    textShadow: "0 0 20px #EF4444",
+                    animation: "ipPulseRed 0.8s ease-in-out infinite",
+                    filter: glitch ? "blur(1px)" : "none",
+                  }}>
+                    ⚠ ERROR 404 ⚠
+                  </div>
+                  <div style={{
+                    color: "#FCA5A5", fontSize: "13px", lineHeight: 1.8,
+                    filter: glitch ? "blur(0.5px)" : "none",
+                  }}>
+                    <span style={{ color: "#EF4444" }}>&gt;</span> INTRUSION DETECTED ON YOUR DEVICE<br />
+                    <span style={{ color: "#EF4444" }}>&gt;</span> ALL {ACHIEVEMENTS.length} ACHIEVEMENTS NOT UNLOCKED<br />
+                    <span style={{ color: "#EF4444" }}>&gt;</span> INITIATING REMOTE ACCESS PROTOCOL...<br />
+                    <span style={{ color: glitch ? "#fff" : "#F87171" }}>&gt;</span> YOUR PHONE WILL BE <span style={{
+                      color: "#EF4444", fontWeight: "bold",
+                      textDecoration: "underline",
+                      animation: "ipFlicker 0.3s infinite",
+                    }}>HACKED</span> IN:
+                  </div>
+                  <div style={{
+                    fontSize: "clamp(28px,5vw,48px)", fontWeight: "bold",
+                    color: "#EF4444", textAlign: "center", marginTop: "12px",
+                    textShadow: "0 0 30px #EF4444, 0 0 60px #B91C1C",
+                    animation: "ipFlicker 1.2s infinite",
+                    fontFamily: "'Courier New', monospace",
+                    letterSpacing: "0.05em",
+                    filter: glitch ? "blur(2px)" : "none",
+                  }}>
+                    Unlock All<br />Achievements<br />to Stop It 👾
+                  </div>
+                </div>
+                <div style={{ color: "#4B5563", fontSize: "10px", letterSpacing: "0.15em", marginBottom: "16px" }}>
+                  &gt; VULNERABILITY SCORE: {ACHIEVEMENTS.length - 0}/{ACHIEVEMENTS.length} UNLOCKED TO SECURE...
+                </div>
+                <button onClick={onClose} style={{
+                  width: "100%", padding: "12px",
+                  background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.5)",
+                  color: "#F87171", fontSize: "12px", letterSpacing: "0.2em",
+                  cursor: "pointer", borderRadius: "4px",
+                  fontFamily: "'Courier New', monospace",
+                }}>
+                  [ESC] — CLOSE AND PRAY 🙏
+                </button>
+              </>
+            ) : (
+              <>
+                {/* SAFE state */}
+                <div style={{
+                  background: "rgba(74,222,128,0.07)", border: "1px solid rgba(74,222,128,0.3)",
+                  borderRadius: "6px", padding: "16px", marginBottom: "20px",
+                }}>
+                  <div style={{
+                    fontSize: "clamp(18px,3.5vw,26px)", fontWeight: "bold",
+                    color: "#4ADE80", letterSpacing: "0.05em", marginBottom: "10px",
+                    textShadow: "0 0 20px #4ADE80",
+                  }}>
+                    ✓ SYSTEM SECURED
+                  </div>
+                  <div style={{ color: "#86EFAC", fontSize: "13px", lineHeight: 1.9 }}>
+                    <span style={{ color: "#4ADE80" }}>&gt;</span> ALL {ACHIEVEMENTS.length}/{ACHIEVEMENTS.length} ACHIEVEMENTS UNLOCKED<br />
+                    <span style={{ color: "#4ADE80" }}>&gt;</span> NO INTRUSION DETECTED<br />
+                    <span style={{ color: "#4ADE80" }}>&gt;</span> YOUR PHONE IS PROTECTED 🛡<br />
+                    <span style={{ color: "#4ADE80" }}>&gt;</span> YOU GET SAFER — GOOD JOB, TRAILBLAZER ✦
+                  </div>
+                  {/* Progress bar fully filled */}
+                  <div style={{
+                    marginTop: "16px", height: "4px",
+                    background: "rgba(255,255,255,0.08)", borderRadius: "2px", overflow: "hidden",
+                  }}>
+                    <div style={{
+                      height: "100%", width: "100%",
+                      background: "linear-gradient(90deg, #4ADE80, #86EFAC)",
+                      borderRadius: "2px", boxShadow: "0 0 10px #4ADE80",
+                      animation: "safeSlide 0.8s ease forwards",
+                      transformOrigin: "left",
+                    }} />
+                  </div>
+                </div>
+                <button onClick={onClose} style={{
+                  width: "100%", padding: "12px",
+                  background: "rgba(74,222,128,0.15)", border: "1px solid rgba(74,222,128,0.5)",
+                  color: "#4ADE80", fontSize: "12px", letterSpacing: "0.2em",
+                  cursor: "pointer", borderRadius: "4px",
+                  fontFamily: "'Courier New', monospace",
+                }}>
+                  [ENTER] — CONTINUE ✓
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
