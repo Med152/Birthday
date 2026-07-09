@@ -284,6 +284,12 @@ export default function App() {
     }
   }, [loading]);
 
+  useEffect(() => {
+    if (unlockedAchievements.length >= ACHIEVEMENTS.length) {
+      setTimeout(() => setShowIpWarning(true), 600);
+    }
+  }, [unlockedAchievements]);
+
   const blowCandle = (i) => {
     if (blownCandles.includes(i)) return;
     setBlownCandles((prev) => {
